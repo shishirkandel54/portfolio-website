@@ -3,13 +3,16 @@ from urllib.parse import urlparse
 
 class Config:
     # Database configuration
-    DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///portfolio.db')
+    DATABASE_URL = os.environ.get('DATABASE_URL')
     
     # Handle PostgreSQL URL format for production
-    if DATABASE_URL and DATABASE_URL.startswith('postgres://'):
-        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-    
-    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    if DATABASE_URL:
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        SQLALCHEMY_DATABASE_URI = DATABASE_URL
+    else:
+        # Fallback to SQLite for development
+        SQLALCHEMY_DATABASE_URI = 'sqlite:///portfolio.db'
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
