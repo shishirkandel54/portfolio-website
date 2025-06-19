@@ -37,10 +37,18 @@ class SiteConfigForm(FlaskForm):
     site_title = StringField('Site Title', validators=[Optional(), Length(max=200)])
     site_description = TextAreaField('Site Description', validators=[Optional(), Length(max=500)])
     contact_email = StringField('Contact Email', validators=[Optional(), Email()])
+    contact_phone = StringField('Contact Phone', validators=[Optional(), Length(max=20)])
+    contact_location = StringField('Contact Location', validators=[Optional(), Length(max=100)])
+    hero_title = StringField('Hero Title', validators=[Optional(), Length(max=200)])
+    hero_subtitle = TextAreaField('Hero Subtitle', validators=[Optional(), Length(max=500)])
+    about_title = StringField('About Section Title', validators=[Optional(), Length(max=200)])
+    about_content = TextAreaField('About Content', validators=[Optional(), Length(max=2000)])
     social_twitter = StringField('Twitter URL', validators=[Optional()])
     social_linkedin = StringField('LinkedIn URL', validators=[Optional()])
     social_github = StringField('GitHub URL', validators=[Optional()])
     social_instagram = StringField('Instagram URL', validators=[Optional()])
+    social_facebook = StringField('Facebook URL', validators=[Optional()])
+    social_behance = StringField('Behance URL', validators=[Optional()])
     submit = SubmitField('Save Settings')
 
 class PortfolioForm(FlaskForm):

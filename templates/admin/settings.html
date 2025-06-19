@@ -51,6 +51,85 @@
                     
                     <hr class="my-4">
                     
+                    <h6 class="mb-3">Hero Section Content</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                {{ form.hero_title.label(class="form-label") }}
+                                {{ form.hero_title(class="form-control") }}
+                                {% if form.hero_title.errors %}
+                                    <div class="text-danger small">{{ form.hero_title.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Main title displayed on the homepage hero section</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.hero_subtitle.label(class="form-label") }}
+                        {{ form.hero_subtitle(class="form-control", rows="3") }}
+                        {% if form.hero_subtitle.errors %}
+                            <div class="text-danger small">{{ form.hero_subtitle.errors[0] }}</div>
+                        {% endif %}
+                        <div class="form-text">Subtitle text below the main hero title</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="mb-3">About Section Content</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                {{ form.about_title.label(class="form-label") }}
+                                {{ form.about_title(class="form-control") }}
+                                {% if form.about_title.errors %}
+                                    <div class="text-danger small">{{ form.about_title.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Title for the about section</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.about_content.label(class="form-label") }}
+                        {{ form.about_content(class="form-control", rows="5") }}
+                        {% if form.about_content.errors %}
+                            <div class="text-danger small">{{ form.about_content.errors[0] }}</div>
+                        {% endif %}
+                        <div class="form-text">Main content for the about section</div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="mb-3">Contact Information</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.contact_phone.label(class="form-label") }}
+                                {{ form.contact_phone(class="form-control") }}
+                                {% if form.contact_phone.errors %}
+                                    <div class="text-danger small">{{ form.contact_phone.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Phone number for contact display</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.contact_location.label(class="form-label") }}
+                                {{ form.contact_location(class="form-control") }}
+                                {% if form.contact_location.errors %}
+                                    <div class="text-danger small">{{ form.contact_location.errors[0] }}</div>
+                                {% endif %}
+                                <div class="form-text">Location for contact display</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
                     <h6 class="mb-3">Social Media Links</h6>
                     
                     <div class="row">
@@ -110,6 +189,37 @@
                                 </div>
                                 {% if form.social_instagram.errors %}
                                     <div class="text-danger small">{{ form.social_instagram.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.social_facebook.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fab fa-facebook text-primary"></i>
+                                    </span>
+                                    {{ form.social_facebook(class="form-control", placeholder="https://facebook.com/username") }}
+                                </div>
+                                {% if form.social_facebook.errors %}
+                                    <div class="text-danger small">{{ form.social_facebook.errors[0] }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.social_behance.label(class="form-label") }}
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fab fa-behance text-info"></i>
+                                    </span>
+                                    {{ form.social_behance(class="form-control", placeholder="https://behance.net/username") }}
+                                </div>
+                                {% if form.social_behance.errors %}
+                                    <div class="text-danger small">{{ form.social_behance.errors[0] }}</div>
                                 {% endif %}
                             </div>
                         </div>
