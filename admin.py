@@ -1,0 +1,307 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask_login import login_user, logout_user, login_required, current_user
+from werkzeug.security import check_password_hash
+from models import Admin, Page, Contact, Analytics, SiteConfig
+from forms import LoginForm, PageForm, SiteConfigForm
+from utils import get_client_ip
+from app import db
+from datetime import datetime, timedelta
+import logging
+
+admin_bp = Blueprint('admin', __name__, template_folder='templates/admin')
+
+@admin_bp.route('/')
+@login_required
+def dashboard():
+    """Admin dashboard"""
+    # Get statistics
+    stats = {
+        'total_pages': Page.query.count(),
+        'published_pages': Page.query.filter_by(is_published=True).count(),
+        'total_contacts': Contact.query.count(),
+        'unread_contacts': Contact.query.filter_by(is_read=False).count(),
+        'page_views_today': Analytics.query.filter(
+            Analytics.timestamp >= datetime.utcnow().date()
+        ).count(),
+        'page_views_week': Analytics.query.filter(
+            Analytics.timestamp >= datetime.utcnow() - timedelta(days=7)
+        ).count(),
+    }
+    
+    # Recent contacts
+    recent_contacts = Contact.query.order_by(Contact.created_at.desc()).limit(5).all()
+    
+    # Recent page views
+    recent_views = Analytics.query.order_by(Analytics.timestamp.desc()).limit(10).all()
+    
+    return render_template('admin/dashboard.html', 
+                         stats=stats, 
+                         recent_contacts=recent_contacts,
+                         recent_views=recent_views)
+
+@admin_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    """Admin login"""
+    if current_user.is_authenticated:
+        return redirect(url_for('admin.dashboard'))
+    
+    form = LoginForm()
+    
+    if form.validate_on_submit():
+        admin = Admin.query.filter_by(username=form.username.data).first()
+        
+        if admin and admin.check_password(form.password.data):
+            # Update last login
+            admin.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            login_user(admin, remember=form.remember_me.data)
+            flash('Login successful!', 'success')
+            
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('admin.dashboard'))
+        else:
+            flash('Invalid username or password', 'error')
+    
+    return render_template('admin/login.html', form=form)
+
+@admin_bp.route('/logout')
+@login_required
+def logout():
+    """Admin logout"""
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('admin.login'))
+
+@admin_bp.route('/pages')
+@login_required
+def pages():
+    """Pages management"""
+    page_num = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    
+    query = Page.query
+    if search:
+        query = query.filter(Page.title.contains(search) | Page.content.contains(search))
+    
+    pages = query.order_by(Page.updated_at.desc()).paginate(
+        page=page_num, per_page=current_app.config['ITEMS_PER_PAGE'], error_out=False
+    )
+    
+    return render_template('admin/pages.html', pages=pages, search=search)
+
+@admin_bp.route('/pages/new', methods=['GET', 'POST'])
+@login_required
+def new_page():
+    """Create new page"""
+    form = PageForm()
+    
+    if form.validate_on_submit():
+        # Check if slug exists
+        existing_page = Page.query.filter_by(slug=form.slug.data).first()
+        if existing_page:
+            flash('A page with this slug already exists', 'error')
+            return render_template('admin/page_form.html', form=form, title='New Page')
+        
+        page = Page(
+            title=form.title.data,
+            slug=form.slug.data,
+            content=form.content.data,
+            meta_description=form.meta_description.data,
+            meta_keywords=form.meta_keywords.data,
+            template_name=form.template_name.data,
+            is_published=form.is_published.data,
+            is_featured=form.is_featured.data
+        )
+        
+        try:
+            db.session.add(page)
+            db.session.commit()
+            flash('Page created successfully!', 'success')
+            return redirect(url_for('admin.pages'))
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error creating page: {e}")
+            flash('Error creating page', 'error')
+    
+    return render_template('admin/page_form.html', form=form, title='New Page')
+
+@admin_bp.route('/pages/<int:page_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_page(page_id):
+    """Edit existing page"""
+    page = Page.query.get_or_404(page_id)
+    form = PageForm(obj=page)
+    
+    if form.validate_on_submit():
+        # Check if slug exists (excluding current page)
+        existing_page = Page.query.filter(Page.slug == form.slug.data, Page.id != page_id).first()
+        if existing_page:
+            flash('A page with this slug already exists', 'error')
+            return render_template('admin/page_form.html', form=form, title='Edit Page', page=page)
+        
+        page.title = form.title.data
+        page.slug = form.slug.data
+        page.content = form.content.data
+        page.meta_description = form.meta_description.data
+        page.meta_keywords = form.meta_keywords.data
+        page.template_name = form.template_name.data
+        page.is_published = form.is_published.data
+        page.is_featured = form.is_featured.data
+        page.updated_at = datetime.utcnow()
+        
+        try:
+            db.session.commit()
+            flash('Page updated successfully!', 'success')
+            return redirect(url_for('admin.pages'))
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error updating page: {e}")
+            flash('Error updating page', 'error')
+    
+    return render_template('admin/page_form.html', form=form, title='Edit Page', page=page)
+
+@admin_bp.route('/pages/<int:page_id>/delete', methods=['POST'])
+@login_required
+def delete_page(page_id):
+    """Delete page"""
+    page = Page.query.get_or_404(page_id)
+    
+    try:
+        db.session.delete(page)
+        db.session.commit()
+        flash('Page deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting page: {e}")
+        flash('Error deleting page', 'error')
+    
+    return redirect(url_for('admin.pages'))
+
+@admin_bp.route('/contacts')
+@login_required
+def contacts():
+    """Contact messages management"""
+    page_num = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '')
+    filter_read = request.args.get('read', '')
+    
+    query = Contact.query
+    if search:
+        query = query.filter(
+            Contact.name.contains(search) | 
+            Contact.email.contains(search) | 
+            Contact.subject.contains(search) |
+            Contact.message.contains(search)
+        )
+    
+    if filter_read == 'unread':
+        query = query.filter_by(is_read=False)
+    elif filter_read == 'read':
+        query = query.filter_by(is_read=True)
+    
+    contacts = query.order_by(Contact.created_at.desc()).paginate(
+        page=page_num, per_page=current_app.config['ITEMS_PER_PAGE'], error_out=False
+    )
+    
+    return render_template('admin/contacts.html', 
+                         contacts=contacts, 
+                         search=search, 
+                         filter_read=filter_read)
+
+@admin_bp.route('/contacts/<int:contact_id>/mark-read', methods=['POST'])
+@login_required
+def mark_contact_read(contact_id):
+    """Mark contact as read"""
+    contact = Contact.query.get_or_404(contact_id)
+    contact.mark_as_read()
+    flash('Contact marked as read', 'success')
+    return redirect(url_for('admin.contacts'))
+
+@admin_bp.route('/contacts/<int:contact_id>/delete', methods=['POST'])
+@login_required
+def delete_contact(contact_id):
+    """Delete contact message"""
+    contact = Contact.query.get_or_404(contact_id)
+    
+    try:
+        db.session.delete(contact)
+        db.session.commit()
+        flash('Contact message deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting contact: {e}")
+        flash('Error deleting contact message', 'error')
+    
+    return redirect(url_for('admin.contacts'))
+
+@admin_bp.route('/analytics')
+@login_required
+def analytics():
+    """Analytics dashboard"""
+    # Date range
+    days = request.args.get('days', 7, type=int)
+    start_date = datetime.utcnow() - timedelta(days=days)
+    
+    # Page views by day
+    daily_views = db.session.query(
+        db.func.date(Analytics.timestamp).label('date'),
+        db.func.count(Analytics.id).label('views')
+    ).filter(Analytics.timestamp >= start_date).group_by(
+        db.func.date(Analytics.timestamp)
+    ).order_by(db.func.date(Analytics.timestamp)).all()
+    
+    # Top pages
+    top_pages = db.session.query(
+        Analytics.page_url,
+        Analytics.page_title,
+        db.func.count(Analytics.id).label('views')
+    ).filter(Analytics.timestamp >= start_date).group_by(
+        Analytics.page_url, Analytics.page_title
+    ).order_by(db.func.count(Analytics.id).desc()).limit(10).all()
+    
+    # Total stats
+    total_views = Analytics.query.filter(Analytics.timestamp >= start_date).count()
+    unique_visitors = db.session.query(
+        db.func.count(db.func.distinct(Analytics.ip_address))
+    ).filter(Analytics.timestamp >= start_date).scalar()
+    
+    stats = {
+        'total_views': total_views,
+        'unique_visitors': unique_visitors,
+        'daily_views': daily_views,
+        'top_pages': top_pages,
+        'days': days
+    }
+    
+    return render_template('admin/analytics.html', stats=stats)
+
+@admin_bp.route('/settings', methods=['GET', 'POST'])
+@login_required
+def settings():
+    """Site settings"""
+    form = SiteConfigForm()
+    
+    if form.validate_on_submit():
+        # Save configuration
+        SiteConfig.set_config('site_title', form.site_title.data, 'Site title')
+        SiteConfig.set_config('site_description', form.site_description.data, 'Site description')
+        SiteConfig.set_config('contact_email', form.contact_email.data, 'Contact email')
+        SiteConfig.set_config('social_twitter', form.social_twitter.data, 'Twitter URL')
+        SiteConfig.set_config('social_linkedin', form.social_linkedin.data, 'LinkedIn URL')
+        SiteConfig.set_config('social_github', form.social_github.data, 'GitHub URL')
+        SiteConfig.set_config('social_instagram', form.social_instagram.data, 'Instagram URL')
+        
+        flash('Settings saved successfully!', 'success')
+        return redirect(url_for('admin.settings'))
+    
+    # Load current configuration
+    form.site_title.data = SiteConfig.get_config('site_title', '')
+    form.site_description.data = SiteConfig.get_config('site_description', '')
+    form.contact_email.data = SiteConfig.get_config('contact_email', '')
+    form.social_twitter.data = SiteConfig.get_config('social_twitter', '')
+    form.social_linkedin.data = SiteConfig.get_config('social_linkedin', '')
+    form.social_github.data = SiteConfig.get_config('social_github', '')
+    form.social_instagram.data = SiteConfig.get_config('social_instagram', '')
+    
+    return render_template('admin/settings.html', form=form)
