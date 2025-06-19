@@ -1,0 +1,39 @@
+🚀 EASY DEPLOYMENT STEPS FOR YOUR PORTFOLIO WEBSITE
+
+STEP 1: GITHUB SETUP
+1. Go to github.com
+2. Click "New repository"
+3. Name it: "my-portfolio-website"
+4. Upload ALL your project files to this repository
+
+STEP 2: VERCEL DEPLOYMENT
+1. Go to vercel.com
+2. Sign up with your GitHub account
+3. Click "New Project"
+4. Select your GitHub repository
+5. Click "Deploy" (no changes needed)
+
+STEP 3: ACCESS YOUR WEBSITE
+- Your website will be live at: your-project-name.vercel.app
+- Admin panel: your-project-name.vercel.app/admin/login
+- Username: admin
+- Password: admin123
+
+STEP 4: CUSTOMIZE YOUR WEBSITE
+- Login to admin panel
+- Add your portfolio projects
+- Update your skills
+- Customize content
+
+IMPORTANT FILES FOR DEPLOYMENT:
+✓ vercel.json - Vercel configuration
+✓ requirements-vercel.txt - Dependencies  
+✓ main.py - App entry point
+✓ All template and static files
+
+TROUBLESHOOTING:
+- If build fails: Check that requirements-vercel.txt exists
+- If website errors: Check Vercel function logs in dashboard
+- Database resets on each deployment (normal for free hosting)
+
+Your website is 100% ready for deployment!

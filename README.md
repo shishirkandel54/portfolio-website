@@ -2,6 +2,14 @@
 
 A Flask-based portfolio website with admin dashboard for content management.
 
+## Quick Start for GitHub + Vercel Deployment
+
+1. **Upload to GitHub**: Create a new repository and upload all files
+2. **Deploy on Vercel**: Connect your GitHub repo to Vercel
+3. **Admin Access**: Go to `your-site.vercel.app/admin/login` (admin/admin123)
+
+See `VERCEL_DEPLOYMENT.md` for detailed step-by-step instructions.
+
 ## Features
 
 - Dynamic content management
@@ -12,55 +20,21 @@ A Flask-based portfolio website with admin dashboard for content management.
 - Contact form
 - Analytics tracking
 
-## Local Development
+## Files for Deployment
 
-1. Install dependencies:
-```bash
-pip install -r requirements-vercel.txt
-```
+- `vercel.json` - Vercel configuration
+- `requirements-vercel.txt` - Python dependencies  
+- `main.py` - Application entry point
+- `.gitignore` - Git ignore rules
 
-2. Set environment variables:
-```bash
-export DATABASE_URL="your_database_url"
-export SESSION_SECRET="your_secret_key"
-```
+## Admin Panel
 
-3. Run the application:
-```bash
-python main.py
-```
-
-## Admin Access
-
-- URL: `/admin/login`
-- Default credentials: admin / admin123
-- Change these in production!
-
-## Deployment
-
-### Vercel Deployment
-
-1. Create a Vercel account
-2. Connect your GitHub repository
-3. Use `requirements-vercel.txt` as your requirements file
-4. Set environment variables in Vercel dashboard:
-   - `DATABASE_URL`: Your PostgreSQL database URL
-   - `SESSION_SECRET`: A secure random string
-
-### Other Platforms
-
-See `DEPLOYMENT_GUIDE.md` for detailed instructions on deploying to:
-- Heroku
-- Railway
-- DigitalOcean
-
-## Environment Variables
-
-- `DATABASE_URL`: PostgreSQL database connection string
-- `SESSION_SECRET`: Secret key for session management
-- `SECRET_KEY`: Flask secret key (optional, defaults to SESSION_SECRET)
+Access your website admin at `/admin/login`:
+- Username: `admin`
+- Password: `admin123`
+- Change password after first login
 
 ## Database
 
-The application uses PostgreSQL in production and SQLite for local development.
-Database tables are created automatically on first run.
+Uses SQLite database (perfect for free hosting on Vercel).
+All data and tables are created automatically.
