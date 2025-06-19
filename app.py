@@ -55,25 +55,29 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
     
-    # Create database tables and default data
-    with app.app_context():
-        try:
-            import models  # noqa: F401
-            db.create_all()
-            
-            # Create default admin user if none exists
-            from models import Admin
-            if not Admin.query.first():
-                admin = Admin(
-                    username='admin',
-                    email='admin@example.com'
-                )
-                admin.set_password('admin123')  # Change this in production
-                db.session.add(admin)
-                db.session.commit()
-                app.logger.info("Default admin user created: admin/admin123")
-        except Exception as e:
-            app.logger.error(f"Database initialization error: {e}")
+    # Initialize database on startup
+    def init_db():
+        with app.app_context():
+            try:
+                import models  # noqa: F401
+                db.create_all()
+                
+                # Create default admin user if none exists
+                from models import Admin
+                if not Admin.query.first():
+                    admin = Admin(
+                        username='admin',
+                        email='admin@example.com'
+                    )
+                    admin.set_password('admin123')  # Change this in production
+                    db.session.add(admin)
+                    db.session.commit()
+                    app.logger.info("Default admin user created: admin/admin123")
+            except Exception as e:
+                app.logger.error(f"Database initialization error: {e}")
+    
+    # Initialize database
+    init_db()
     
     return app
 
