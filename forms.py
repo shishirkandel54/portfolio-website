@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, PasswordField, BooleanField, SelectField, HiddenField
-from wtforms.validators import DataRequired, Email, Length, Optional
+from wtforms import StringField, TextAreaField, PasswordField, BooleanField, SelectField, HiddenField, IntegerField, SubmitField
+from wtforms.validators import DataRequired, Email, Length, Optional, NumberRange
 from wtforms.widgets import TextArea
 
 class LoginForm(FlaskForm):
@@ -41,3 +41,53 @@ class SiteConfigForm(FlaskForm):
     social_linkedin = StringField('LinkedIn URL', validators=[Optional()])
     social_github = StringField('GitHub URL', validators=[Optional()])
     social_instagram = StringField('Instagram URL', validators=[Optional()])
+    submit = SubmitField('Save Settings')
+
+class PortfolioForm(FlaskForm):
+    """Portfolio project form"""
+    title = StringField('Project Title', validators=[DataRequired(), Length(max=200)])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=1000)])
+    image_url = StringField('Image URL', validators=[Optional(), Length(max=500)])
+    project_url = StringField('Project URL', validators=[Optional(), Length(max=500)])
+    category = SelectField('Category', choices=[
+        ('graphic-design', 'Graphic Design'),
+        ('web-design', 'Web Design'),
+        ('branding', 'Branding'),
+        ('print-design', 'Print Design'),
+        ('social-media', 'Social Media'),
+        ('ui-ux', 'UI/UX Design'),
+        ('other', 'Other')
+    ], default='graphic-design')
+    tags = StringField('Tags', validators=[Optional(), Length(max=500)])
+    is_featured = BooleanField('Featured Project')
+    order_index = IntegerField('Display Order', validators=[Optional()], default=0)
+    submit = SubmitField('Save Project')
+
+class SkillForm(FlaskForm):
+    """Skill form"""
+    name = StringField('Skill Name', validators=[DataRequired(), Length(max=100)])
+    category = SelectField('Category', choices=[
+        ('Design Software', 'Design Software'),
+        ('Design Specializations', 'Design Specializations'),
+        ('Additional Skills', 'Additional Skills')
+    ], default='Design Software')
+    icon_class = StringField('Icon Class', validators=[Optional(), Length(max=100)])
+    color = StringField('Color', validators=[Optional(), Length(max=20)], default='#8b5cf6')
+    proficiency = IntegerField('Proficiency (%)', validators=[Optional(), NumberRange(min=0, max=100)], default=80)
+    order_index = IntegerField('Display Order', validators=[Optional()], default=0)
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Save Skill')
+
+class CareerPathForm(FlaskForm):
+    """Career path form"""
+    title = StringField('Career Title', validators=[DataRequired(), Length(max=200)])
+    description = TextAreaField('Description', validators=[Optional(), Length(max=1000)])
+    icon_class = StringField('Icon Class', validators=[Optional(), Length(max=100)])
+    icon_color = StringField('Icon Color', validators=[Optional(), Length(max=100)], 
+                           default='linear-gradient(135deg, #8b5cf6, #ec4899)')
+    skills = TextAreaField('Skills', validators=[Optional()])
+    salary_range = StringField('Salary Range', validators=[Optional(), Length(max=100)])
+    learning_time = StringField('Learning Time', validators=[Optional(), Length(max=100)])
+    order_index = IntegerField('Display Order', validators=[Optional()], default=0)
+    is_active = BooleanField('Active', default=True)
+    submit = SubmitField('Save Career Path')

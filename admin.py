@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash
-from models import Admin, Page, Contact, Analytics, SiteConfig
-from forms import LoginForm, PageForm, SiteConfigForm
+from models import Admin, Page, Contact, Analytics, SiteConfig, Portfolio, Skill, CareerPath
+from forms import LoginForm, PageForm, SiteConfigForm, PortfolioForm, SkillForm, CareerPathForm
 from utils import get_client_ip
 from app import db
 from datetime import datetime, timedelta
@@ -305,3 +305,221 @@ def settings():
     form.social_instagram.data = SiteConfig.get_config('social_instagram', '')
     
     return render_template('admin/settings.html', form=form)
+
+# Portfolio Management Routes
+@admin_bp.route('/portfolio')
+@login_required
+def portfolio():
+    """Portfolio management"""
+    page = request.args.get('page', 1, type=int)
+    portfolios = Portfolio.query.order_by(Portfolio.order_index.asc(), Portfolio.created_at.desc()).paginate(
+        page=page, per_page=12, error_out=False
+    )
+    return render_template('admin/portfolio.html', portfolios=portfolios)
+
+@admin_bp.route('/portfolio/new', methods=['GET', 'POST'])
+@login_required
+def new_portfolio():
+    """Create new portfolio project"""
+    form = PortfolioForm()
+    
+    if form.validate_on_submit():
+        portfolio = Portfolio(
+            title=form.title.data,
+            description=form.description.data,
+            image_url=form.image_url.data,
+            project_url=form.project_url.data,
+            category=form.category.data,
+            tags=form.tags.data,
+            is_featured=form.is_featured.data,
+            order_index=form.order_index.data
+        )
+        db.session.add(portfolio)
+        db.session.commit()
+        
+        flash(f'Portfolio project "{portfolio.title}" created successfully!', 'success')
+        return redirect(url_for('admin.portfolio'))
+    
+    return render_template('admin/portfolio_form.html', form=form, title='New Portfolio Project')
+
+@admin_bp.route('/portfolio/<int:portfolio_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_portfolio(portfolio_id):
+    """Edit portfolio project"""
+    portfolio = Portfolio.query.get_or_404(portfolio_id)
+    form = PortfolioForm(obj=portfolio)
+    
+    if form.validate_on_submit():
+        portfolio.title = form.title.data
+        portfolio.description = form.description.data
+        portfolio.image_url = form.image_url.data
+        portfolio.project_url = form.project_url.data
+        portfolio.category = form.category.data
+        portfolio.tags = form.tags.data
+        portfolio.is_featured = form.is_featured.data
+        portfolio.order_index = form.order_index.data
+        portfolio.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        flash(f'Portfolio project "{portfolio.title}" updated successfully!', 'success')
+        return redirect(url_for('admin.portfolio'))
+    
+    return render_template('admin/portfolio_form.html', form=form, portfolio=portfolio, title='Edit Portfolio Project')
+
+@admin_bp.route('/portfolio/<int:portfolio_id>/delete', methods=['POST'])
+@login_required
+def delete_portfolio(portfolio_id):
+    """Delete portfolio project"""
+    portfolio = Portfolio.query.get_or_404(portfolio_id)
+    title = portfolio.title
+    
+    db.session.delete(portfolio)
+    db.session.commit()
+    
+    flash(f'Portfolio project "{title}" deleted successfully!', 'success')
+    return redirect(url_for('admin.portfolio'))
+
+# Skills Management Routes
+@admin_bp.route('/skills')
+@login_required
+def skills():
+    """Skills management"""
+    skills = Skill.query.order_by(Skill.category.asc(), Skill.order_index.asc()).all()
+    skills_by_category = {}
+    for skill in skills:
+        if skill.category not in skills_by_category:
+            skills_by_category[skill.category] = []
+        skills_by_category[skill.category].append(skill)
+    
+    return render_template('admin/skills.html', skills_by_category=skills_by_category)
+
+@admin_bp.route('/skills/new', methods=['GET', 'POST'])
+@login_required
+def new_skill():
+    """Create new skill"""
+    form = SkillForm()
+    
+    if form.validate_on_submit():
+        skill = Skill(
+            name=form.name.data,
+            category=form.category.data,
+            icon_class=form.icon_class.data,
+            color=form.color.data,
+            proficiency=form.proficiency.data,
+            order_index=form.order_index.data,
+            is_active=form.is_active.data
+        )
+        db.session.add(skill)
+        db.session.commit()
+        
+        flash(f'Skill "{skill.name}" created successfully!', 'success')
+        return redirect(url_for('admin.skills'))
+    
+    return render_template('admin/skill_form.html', form=form, title='New Skill')
+
+@admin_bp.route('/skills/<int:skill_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_skill(skill_id):
+    """Edit skill"""
+    skill = Skill.query.get_or_404(skill_id)
+    form = SkillForm(obj=skill)
+    
+    if form.validate_on_submit():
+        skill.name = form.name.data
+        skill.category = form.category.data
+        skill.icon_class = form.icon_class.data
+        skill.color = form.color.data
+        skill.proficiency = form.proficiency.data
+        skill.order_index = form.order_index.data
+        skill.is_active = form.is_active.data
+        
+        db.session.commit()
+        flash(f'Skill "{skill.name}" updated successfully!', 'success')
+        return redirect(url_for('admin.skills'))
+    
+    return render_template('admin/skill_form.html', form=form, skill=skill, title='Edit Skill')
+
+@admin_bp.route('/skills/<int:skill_id>/delete', methods=['POST'])
+@login_required
+def delete_skill(skill_id):
+    """Delete skill"""
+    skill = Skill.query.get_or_404(skill_id)
+    name = skill.name
+    
+    db.session.delete(skill)
+    db.session.commit()
+    
+    flash(f'Skill "{name}" deleted successfully!', 'success')
+    return redirect(url_for('admin.skills'))
+
+# Career Paths Management Routes
+@admin_bp.route('/careers')
+@login_required
+def careers():
+    """Career paths management"""
+    careers = CareerPath.query.order_by(CareerPath.order_index.asc(), CareerPath.created_at.desc()).all()
+    return render_template('admin/careers.html', careers=careers)
+
+@admin_bp.route('/careers/new', methods=['GET', 'POST'])
+@login_required
+def new_career():
+    """Create new career path"""
+    form = CareerPathForm()
+    
+    if form.validate_on_submit():
+        career = CareerPath(
+            title=form.title.data,
+            description=form.description.data,
+            icon_class=form.icon_class.data,
+            icon_color=form.icon_color.data,
+            skills=form.skills.data,
+            salary_range=form.salary_range.data,
+            learning_time=form.learning_time.data,
+            order_index=form.order_index.data,
+            is_active=form.is_active.data
+        )
+        db.session.add(career)
+        db.session.commit()
+        
+        flash(f'Career path "{career.title}" created successfully!', 'success')
+        return redirect(url_for('admin.careers'))
+    
+    return render_template('admin/career_form.html', form=form, title='New Career Path')
+
+@admin_bp.route('/careers/<int:career_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_career(career_id):
+    """Edit career path"""
+    career = CareerPath.query.get_or_404(career_id)
+    form = CareerPathForm(obj=career)
+    
+    if form.validate_on_submit():
+        career.title = form.title.data
+        career.description = form.description.data
+        career.icon_class = form.icon_class.data
+        career.icon_color = form.icon_color.data
+        career.skills = form.skills.data
+        career.salary_range = form.salary_range.data
+        career.learning_time = form.learning_time.data
+        career.order_index = form.order_index.data
+        career.is_active = form.is_active.data
+        career.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        flash(f'Career path "{career.title}" updated successfully!', 'success')
+        return redirect(url_for('admin.careers'))
+    
+    return render_template('admin/career_form.html', form=form, career=career, title='Edit Career Path')
+
+@admin_bp.route('/careers/<int:career_id>/delete', methods=['POST'])
+@login_required
+def delete_career(career_id):
+    """Delete career path"""
+    career = CareerPath.query.get_or_404(career_id)
+    title = career.title
+    
+    db.session.delete(career)
+    db.session.commit()
+    
+    flash(f'Career path "{title}" deleted successfully!', 'success')
+    return redirect(url_for('admin.careers'))

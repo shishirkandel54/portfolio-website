@@ -50,10 +50,13 @@
                     
                     <div class="mb-3">
                         {{ form.content.label(class="form-label") }}
-                        {{ form.content(class="form-control", id="content-editor") }}
+                        {{ form.content(class="form-control", id="content-editor", rows="15", placeholder="Enter your page content here...") }}
                         {% if form.content.errors %}
                             <div class="text-danger small">{{ form.content.errors[0] }}</div>
                         {% endif %}
+                        <div class="form-text">
+                            <strong>Formatting Tips:</strong> Use HTML tags like &lt;h2&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;ul&gt;, &lt;li&gt; for formatting
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -144,23 +147,6 @@
 
 {% block scripts %}
 <script>
-// Initialize TinyMCE
-tinymce.init({
-    selector: '#content-editor',
-    height: 400,
-    menubar: false,
-    plugins: [
-        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-        'insertdatetime', 'media', 'table', 'help', 'wordcount'
-    ],
-    toolbar: 'undo redo | blocks | ' +
-        'bold italic forecolor | alignleft aligncenter ' +
-        'alignright alignjustify | bullist numlist outdent indent | ' +
-        'removeformat | help',
-    content_style: 'body { font-family: Inter, sans-serif; font-size: 14px }'
-});
-
 // Auto-generate slug from title
 document.getElementById('title').addEventListener('input', function() {
     const title = this.value;
@@ -170,5 +156,36 @@ document.getElementById('title').addEventListener('input', function() {
         .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
     document.getElementById('slug').value = slug;
 });
+
+// Add formatting toolbar for content editor
+function insertAtCursor(textareaId, text) {
+    const textarea = document.getElementById(textareaId);
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const currentValue = textarea.value;
+    
+    textarea.value = currentValue.substring(0, start) + text + currentValue.substring(end);
+    textarea.setSelectionRange(start + text.length, start + text.length);
+    textarea.focus();
+}
+
+// Add formatting buttons
+const contentEditor = document.getElementById('content-editor');
+const toolbar = document.createElement('div');
+toolbar.className = 'btn-toolbar mb-2';
+toolbar.innerHTML = `
+    <div class="btn-group me-2" role="group">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<h2></h2>')" title="Heading">H2</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<p></p>')" title="Paragraph">P</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<strong></strong>')" title="Bold">B</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<em></em>')" title="Italic">I</button>
+    </div>
+    <div class="btn-group me-2" role="group">
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<ul>\\n<li></li>\\n</ul>')" title="Bullet List">UL</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<a href=\\\"\\\" target=\\\"_blank\\\"></a>')" title="Link">Link</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertAtCursor('content-editor', '<img src=\\\"\\\" alt=\\\"\\\" class=\\\"img-fluid\\\">')" title="Image">Img</button>
+    </div>
+`;
+contentEditor.parentNode.insertBefore(toolbar, contentEditor);
 </script>
 {% endblock %}

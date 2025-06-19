@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required
-from models import Page, Contact, Analytics, SiteConfig
+from models import Page, Contact, Analytics, SiteConfig, Portfolio, Skill, CareerPath
 from forms import ContactForm
 from utils import track_page_view, get_client_ip
 from app import db
@@ -17,17 +17,38 @@ def index():
     # Get featured pages
     featured_pages = Page.query.filter_by(is_published=True, is_featured=True).limit(3).all()
     
+    # Get portfolio items for display
+    portfolio_items = Portfolio.query.order_by(Portfolio.order_index.asc(), Portfolio.created_at.desc()).limit(9).all()
+    
+    # Get skills by category
+    skills = Skill.query.filter_by(is_active=True).order_by(Skill.category.asc(), Skill.order_index.asc()).all()
+    skills_by_category = {}
+    for skill in skills:
+        if skill.category not in skills_by_category:
+            skills_by_category[skill.category] = []
+        skills_by_category[skill.category].append(skill)
+    
+    # Get active career paths
+    career_paths = CareerPath.query.filter_by(is_active=True).order_by(CareerPath.order_index.asc()).all()
+    
     # Get site configuration
     site_config = {
         'site_title': SiteConfig.get_config('site_title', 'Shishir Kandel - Creative Graphic Designer'),
         'site_description': SiteConfig.get_config('site_description', 'Creative Graphic Designer crafting exceptional visual experiences'),
         'social_twitter': SiteConfig.get_config('social_twitter', '#'),
-        'social_linkedin': SiteConfig.get_config('social_linkedin', '#'),
-        'social_github': SiteConfig.get_config('social_github', '#'),
-        'social_instagram': SiteConfig.get_config('social_instagram', '#'),
+        'social_linkedin': SiteConfig.get_config('social_linkedin', 'https://www.linkedin.com/in/shishirkandel/'),
+        'social_github': SiteConfig.get_config('social_github', 'https://github.com/shishirkandel'),
+        'social_instagram': SiteConfig.get_config('social_instagram', 'https://www.instagram.com/the_shishir.kandel/'),
+        'social_facebook': SiteConfig.get_config('social_facebook', 'https://www.facebook.com/shishir.kandel.772476'),
+        'social_behance': SiteConfig.get_config('social_behance', 'https://www.behance.net/theshishirkandel'),
     }
     
-    return render_template('index.html', featured_pages=featured_pages, config=site_config)
+    return render_template('index.html', 
+                         featured_pages=featured_pages, 
+                         config=site_config,
+                         portfolio_items=portfolio_items,
+                         skills_by_category=skills_by_category,
+                         career_paths=career_paths)
 
 @main_bp.route('/page/<slug>')
 def page(slug):

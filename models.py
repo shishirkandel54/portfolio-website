@@ -12,7 +12,7 @@ class Admin(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     last_login = db.Column(db.DateTime)
-    is_active = db.Column(db.Boolean, default=True)
+    active = db.Column(db.Boolean, default=True)
     
     def set_password(self, password):
         """Set password hash"""
@@ -113,3 +113,63 @@ class SiteConfig(db.Model):
             db.session.add(config)
         db.session.commit()
         return config
+
+class Portfolio(db.Model):
+    """Portfolio project model"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    image_url = db.Column(db.String(500))
+    project_url = db.Column(db.String(500))
+    category = db.Column(db.String(100))
+    tags = db.Column(db.String(500))  # Comma-separated tags
+    is_featured = db.Column(db.Boolean, default=False)
+    order_index = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Portfolio {self.title}>'
+    
+    @property
+    def tag_list(self):
+        """Get tags as a list"""
+        return [tag.strip() for tag in self.tags.split(',')] if self.tags else []
+
+class Skill(db.Model):
+    """Skills model"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(100), nullable=False)  # Design Software, Specializations, Additional Skills
+    icon_class = db.Column(db.String(100))  # Font Awesome class
+    color = db.Column(db.String(20), default='#8b5cf6')
+    proficiency = db.Column(db.Integer, default=80)  # 0-100
+    order_index = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Skill {self.name}>'
+
+class CareerPath(db.Model):
+    """Career paths model"""
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    icon_class = db.Column(db.String(100))
+    icon_color = db.Column(db.String(100))
+    skills = db.Column(db.Text)  # Comma-separated skills
+    salary_range = db.Column(db.String(100))
+    learning_time = db.Column(db.String(100))
+    order_index = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<CareerPath {self.title}>'
+    
+    @property
+    def skill_list(self):
+        """Get skills as a list"""
+        return [skill.strip() for skill in self.skills.split(',')] if self.skills else []
